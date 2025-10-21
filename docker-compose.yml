@@ -1,0 +1,79 @@
+services:
+  scylla-node1:
+    image: scylladb/scylla:latest
+    container_name: scylla-node1
+    hostname: scylla-node1
+    volumes:
+      - scylla-data-1:/var/lib/scylla
+    networks:
+      scylla-net:
+        ipv4_address: 172.22.0.11
+    ports:
+      - "9042:9042"
+    cap_add:
+      - SYS_NICE
+      - IPC_LOCK
+    command: >
+      --seeds=172.22.0.11
+      --smp 1
+      --memory 2G
+      --developer-mode 1
+      --reactor-backend epoll
+      --listen-address scylla-node1
+      --broadcast-rpc-address scylla-node1
+
+  scylla-node2:
+    image: scylladb/scylla:latest
+    container_name: scylla-node2
+    hostname: scylla-node2
+    volumes:
+      - scylla-data-2:/var/lib/scylla
+    networks:
+      scylla-net:
+        ipv4_address: 172.22.0.12
+    depends_on:
+      - scylla-node1
+    cap_add:
+      - SYS_NICE
+      - IPC_LOCK
+    command: >
+      --seeds=172.22.0.11
+      --smp 1
+      --memory 2G
+      --developer-mode 1
+      --listen-address scylla-node2
+      --broadcast-rpc-address scylla-node2
+
+  scylla-node3:
+    image: scylladb/scylla:latest
+    container_name: scylla-node3
+    hostname: scylla-node3
+    volumes:
+      - scylla-data-3:/var/lib/scylla
+    networks:
+      scylla-net:
+        ipv4_address: 172.22.0.13
+    depends_on:
+      - scylla-node1
+    cap_add:
+      - SYS_NICE
+      - IPC_LOCK
+    command: >
+      --seeds=172.22.0.11
+      --smp 1
+      --memory 2G
+      --developer-mode 1
+      --listen-address scylla-node3
+      --broadcast-rpc-address scylla-node3
+
+volumes:
+  scylla-data-1:
+  scylla-data-2:
+  scylla-data-3:
+
+networks:
+  scylla-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16

@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package acid;
+
+option go_package = ".";
+
+service Acid {
+    rpc createUser(RegisterUserRequest) returns (RegisterUserResponse);
+    rpc fetchUser(FetchUserRequest) returns (FetchUserResponse);
+}
+
+message RegisterUserRequest {
+    string name = 1; 
+    string email = 2;
+}
+
+message RegisterUserResponse {
+    enum Status {
+        SUCCESS = 0;
+        FAILURE = 1;
+    }
+    Status response = 3;
+}
+
+message FetchUserRequest {
+    string email = 1;
+}
+
+message FetchUserResponse {
+    string name = 1;
+    string email = 2;
+}
