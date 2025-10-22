@@ -14,6 +14,7 @@ func SetupRoutes(router *gin.Engine, userHandler *handlers.UserHandler) {
 		api.GET("/health", userHandler.HealthCheck)
 		api.POST("/create/user", userHandler.CreateUser)
 		api.GET("/get/user/:id", userHandler.GetUser)
+		api.GET("/cache/metrics", userHandler.GetCacheMetrics) // Cache metrics endpoint
 	}
 
 }

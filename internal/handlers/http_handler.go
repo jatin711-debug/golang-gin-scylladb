@@ -53,6 +53,9 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 
 func (h *UserHandler) GetUser(c *gin.Context) {
 	id := c.Param("id")
+
+	h.service.Logger.Info("Getting user", zap.String("id", id))
+
 	var user models.User
 
 	// Try to get from cache using GetOrSetJSON
@@ -62,7 +65,18 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		&user,
 		func() (interface{}, error) {
 			// This function is only called on cache miss
-			return h.service.Repo.GetUserByID(id)
+			h.service.Logger.Info("Fetching user from database", zap.String("id", id))
+			fetchedUser, dbErr := h.service.Repo.GetUserByID(id)
+			if dbErr != nil {
+				h.service.Logger.Error("Database fetch failed",
+					zap.String("id", id),
+					zap.Error(dbErr))
+				return nil, dbErr
+			}
+			h.service.Logger.Info("User fetched from database successfully",
+				zap.String("id", id),
+				zap.String("username", fetchedUser.Username))
+			return fetchedUser, nil
 		},
 	)
 
@@ -76,10 +90,22 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 
 	h.service.Logger.Info("User retrieved successfully",
 		zap.String("id", id),
+		zap.String("username", user.Username),
 		zap.String("source", source))
 
 	c.JSON(200, gin.H{
 		"user":   user,
 		"source": source,
+	})
+}
+
+// GetCacheMetrics returns cache performance metrics
+func (h *UserHandler) GetCacheMetrics(c *gin.Context) {
+	metrics := h.service.CacheManager.GetMetrics()
+	health := h.service.CacheManager.HealthCheck(c.Request.Context())
+
+	c.JSON(200, gin.H{
+		"metrics": metrics,
+		"health":  health,
 	})
 }

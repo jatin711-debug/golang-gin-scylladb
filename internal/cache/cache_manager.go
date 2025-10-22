@@ -339,25 +339,46 @@ func (cm *CacheManager) GetOrSetJSON(ctx context.Context, key string, dest inter
 
 	// Only fetch if it's a cache miss
 	if !errors.Is(err, ErrCacheMiss) {
-		return "", fmt.Errorf("cache error: %w", err)
+		// Check if it's just unmarshal error, might be corrupted cache
+		if errors.Is(err, ErrCacheUnavailable) {
+			log.Printf("[CacheManager:%s] Cache unavailable for key '%s', fetching from source", cm.config.Name, key)
+		} else {
+			return "", fmt.Errorf("cache error: %w", err)
+		}
 	}
 
 	// Cache miss - fetch from source
 	log.Printf("[CacheManager:%s] JSON cache miss for key '%s', fetching from source", cm.config.Name, key)
 	value, err := fetchFunc()
 	if err != nil {
+		log.Printf("[CacheManager:%s] Fetch function failed for key '%s': %v", cm.config.Name, key, err)
 		return "", fmt.Errorf("fetch function failed: %w", err)
+	}
+
+	// Validate that we got data
+	if value == nil {
+		log.Printf("[CacheManager:%s] Fetch function returned nil for key '%s'", cm.config.Name, key)
+		return "", fmt.Errorf("no data found")
 	}
 
 	// Store in cache as JSON
 	if setErr := cm.SetJSON(ctx, key, value); setErr != nil {
-		log.Printf("[CacheManager:%s] Failed to cache JSON: %v", cm.config.Name, setErr)
+		log.Printf("[CacheManager:%s] Failed to cache JSON for key '%s': %v", cm.config.Name, key, setErr)
 		// Don't fail the request
 	}
 
-	// Also populate the destination
-	jsonData, _ := json.Marshal(value)
-	json.Unmarshal(jsonData, dest)
+	// Populate the destination with the fetched value
+	// Handle both pointer and non-pointer cases
+	jsonData, marshalErr := json.Marshal(value)
+	if marshalErr != nil {
+		log.Printf("[CacheManager:%s] Failed to marshal fetched value: %v", cm.config.Name, marshalErr)
+		return "", fmt.Errorf("failed to marshal fetched value: %w", marshalErr)
+	}
+
+	if unmarshalErr := json.Unmarshal(jsonData, dest); unmarshalErr != nil {
+		log.Printf("[CacheManager:%s] Failed to unmarshal into destination: %v", cm.config.Name, unmarshalErr)
+		return "", fmt.Errorf("failed to unmarshal into destination: %w", unmarshalErr)
+	}
 
 	return "database", nil
 }
