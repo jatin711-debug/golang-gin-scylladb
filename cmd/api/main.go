@@ -3,12 +3,14 @@ package main
 import (
 	"acid/db"
 	"acid/internal/cache"
+	grpcServer "acid/internal/grpc"
 	"acid/internal/handlers"
 	loggerUtils "acid/internal/logger"
 	"acid/internal/repository"
 	"acid/internal/server"
 	"acid/internal/services"
 	"acid/internal/utils"
+	pb "acid/proto/acid"
 	"context"
 	"log"
 	"net"
@@ -61,7 +63,7 @@ func main() {
 	grpcPort := utils.GetEnv("GRPC_PORT", "50051")
 	httpPort := utils.GetEnv("HTTP_PORT", "8000")
 
-	grpcServer := grpc.NewServer()
+	grpcServerInstance := grpc.NewServer()
 	router := gin.Default()
 
 	// Initialize repository, service, and handler
@@ -70,12 +72,17 @@ func main() {
 	userHandler := handlers.NewUserHandler(userService)
 	server.SetupRoutes(router, userHandler)
 
-	go StartGRPCServer(grpcServer, grpcPort, logger)
+	// Register gRPC service
+	acidServer := grpcServer.NewAcidServer(userService, logger)
+	pb.RegisterAcidServer(grpcServerInstance, acidServer)
+	logger.Info("✅ gRPC Acid service registered")
+
+	go StartGRPCServer(grpcServerInstance, grpcPort, logger)
 	go startHTTPServer(httpPort, router, logger)
 
 	<-utils.GracefulShutdown()
 	logger.Info("Shutting down servers...")
-	shutdownServers(grpcServer, logger)
+	shutdownServers(grpcServerInstance, logger)
 }
 
 func StartGRPCServer(grpcServer *grpc.Server, port string, logger *zap.Logger) {

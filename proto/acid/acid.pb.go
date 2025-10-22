@@ -165,7 +165,7 @@ func (x *RegisterUserResponse) GetResponse() RegisterUserResponse_Status {
 
 type FetchUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -200,9 +200,9 @@ func (*FetchUserRequest) Descriptor() ([]byte, []int) {
 	return file_proto_acid_acid_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *FetchUserRequest) GetEmail() string {
+func (x *FetchUserRequest) GetUserId() string {
 	if x != nil {
-		return x.Email
+		return x.UserId
 	}
 	return ""
 }
@@ -271,9 +271,9 @@ const file_proto_acid_acid_proto_rawDesc = "" +
 	"\bresponse\x18\x03 \x01(\x0e2!.acid.RegisterUserResponse.StatusR\bresponse\"\"\n" +
 	"\x06Status\x12\v\n" +
 	"\aSUCCESS\x10\x00\x12\v\n" +
-	"\aFAILURE\x10\x01\"(\n" +
-	"\x10FetchUserRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\"=\n" +
+	"\aFAILURE\x10\x01\"+\n" +
+	"\x10FetchUserRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"=\n" +
 	"\x11FetchUserResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email2\x89\x01\n" +

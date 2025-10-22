@@ -24,5 +24,19 @@ create_keyspace:
 drop_keyspace:
 	docker exec -it scylla-node1 cqlsh -e "DROP KEYSPACE IF EXISTS prod_data;"
 
+# Run the main server (HTTP + gRPC)
+run:
+	go run cmd/api/main.go
+
+# Test gRPC endpoints
+test-grpc:
+	go run cmd/grpc-client/main.go
+
+# Generate proto files (if you modify acid.proto)
+proto:
+	protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		proto/acid/acid.proto
+
 	
-.PHONY: create-secret postgres createdb dropdb migrateup migratedown sqlc test server mockdb delete-pods
+.PHONY: create-secret postgres createdb dropdb migrateup migratedown sqlc test server mockdb delete-pods run test-grpc proto

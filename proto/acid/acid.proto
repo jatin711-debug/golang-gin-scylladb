@@ -23,7 +23,7 @@ message RegisterUserResponse {
 }
 
 message FetchUserRequest {
-    string email = 1;
+    string user_id = 1;
 }
 
 message FetchUserResponse {
