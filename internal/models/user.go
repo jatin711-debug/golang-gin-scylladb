@@ -14,15 +14,17 @@ type User struct {
 	CreatedAt time.Time  `db:"created_at"`
 }
 
-func (u *User) Validate() error {
+type UserRequest struct {
+	Username string `json:"username" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+}
+
+func (u *UserRequest) Validate() error {
 	if u.Username == "" {
 		return fmt.Errorf("username cannot be empty")
 	}
 	if u.Email == "" {
 		return fmt.Errorf("email cannot be empty")
-	}
-	if u.CreatedAt.IsZero() {
-		return fmt.Errorf("created_at cannot be empty")
 	}
 	return nil
 }

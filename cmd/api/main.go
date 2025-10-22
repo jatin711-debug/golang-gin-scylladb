@@ -4,6 +4,10 @@ import (
 	"acid/db"
 	loggerUtils "acid/internal/logger"
 	"acid/internal/utils"
+	"acid/internal/server"
+	"acid/internal/services"
+	"acid/internal/repository"
+	"acid/internal/handlers"
 	"context"
 	"log"
 	"net"
@@ -34,6 +38,7 @@ func main() {
 	if err := database.Health(); err != nil {
 		log.Fatalf("Health check failed: %v", err)
 	}
+
 	logger, err := loggerUtils.InitLogger()
 	if err != nil {
 		panic("Failed to initialize logger: " + err.Error())
@@ -43,7 +48,10 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	router := gin.Default()
-	gin.SetMode(gin.ReleaseMode)
+	userRepository := repository.NewUserRepository(database.Session)
+	userService := services.NewUserService(userRepository, logger)
+	userHandler := handlers.NewUserHandler(userService)
+	server.SetupRoutes(router, userHandler)
 
 	go StartGRPCServer(grpcServer, grpcPort, logger)
 	go startHTTPServer(httpPort, router, logger)

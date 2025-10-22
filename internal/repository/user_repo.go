@@ -19,11 +19,11 @@ type UserRepository struct {
 }
 
 func NewUserRepository(session gocqlx.Session) *UserRepository {
-    return &UserRepository{session: session}
+	return &UserRepository{session: session}
 }
 
 func (r *UserRepository) CreateUser(user *models.User) error {
-	q := r.session.Query(UserTable.Insert()).Bind(user)
+	q := r.session.Query(UserTable.Insert()).BindStruct(user)
 	if err := q.ExecRelease(); err != nil {
 		return err
 	}

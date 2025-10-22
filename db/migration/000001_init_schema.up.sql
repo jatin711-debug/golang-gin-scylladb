@@ -1,6 +1,6 @@
-CREATE TABLE IF NOT EXISTS Users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY,
+    username TEXT,
     email TEXT,
-    name TEXT,
     created_at TIMESTAMP
 );
