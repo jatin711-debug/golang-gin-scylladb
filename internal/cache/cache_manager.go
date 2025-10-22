@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -117,12 +118,12 @@ func (cm *CacheManager) Get(ctx context.Context, key string) (string, string, er
 }
 
 // Set stores a value in cache (write-through to all enabled tiers)
-func (cm *CacheManager) Set(ctx context.Context, key string, value string) error {
+func (cm *CacheManager) Set(ctx context.Context, key string, value any) error {
 	var localErr, redisErr error
 
 	// Write to local cache
 	if cm.config.EnableLocalCache && cm.local != nil {
-		localErr = cm.local.SetString(key, value)
+		localErr = cm.local.SetJSON(key, value)
 		if localErr != nil {
 			log.Printf("[CacheManager:%s] Failed to set in local cache: %v", cm.config.Name, localErr)
 		}
@@ -296,6 +297,69 @@ func (cm *CacheManager) GetMetrics() map[string]interface{} {
 	}
 
 	return metrics
+}
+
+// SetJSON stores any object as JSON in cache
+func (cm *CacheManager) SetJSON(ctx context.Context, key string, value interface{}) error {
+	// Marshal to JSON
+	jsonData, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("failed to marshal to JSON: %w", err)
+	}
+
+	// Store as string
+	return cm.Set(ctx, key, string(jsonData))
+}
+
+// GetJSON retrieves and unmarshals a JSON object from cache
+// Returns the value, source, and error
+func (cm *CacheManager) GetJSON(ctx context.Context, key string, dest interface{}) (string, error) {
+	// Get from cache
+	jsonString, source, err := cm.Get(ctx, key)
+	if err != nil {
+		return source, err
+	}
+
+	// Unmarshal JSON
+	if err := json.Unmarshal([]byte(jsonString), dest); err != nil {
+		return source, fmt.Errorf("failed to unmarshal JSON: %w", err)
+	}
+
+	return source, nil
+}
+
+// GetOrSetJSON retrieves from cache or fetches and stores as JSON
+func (cm *CacheManager) GetOrSetJSON(ctx context.Context, key string, dest interface{}, fetchFunc func() (interface{}, error)) (string, error) {
+	// Try to get from cache
+	source, err := cm.GetJSON(ctx, key, dest)
+	if err == nil {
+		log.Printf("[CacheManager:%s] JSON cache hit for key '%s' from %s", cm.config.Name, key, source)
+		return source, nil
+	}
+
+	// Only fetch if it's a cache miss
+	if !errors.Is(err, ErrCacheMiss) {
+		return "", fmt.Errorf("cache error: %w", err)
+	}
+
+	// Cache miss - fetch from source
+	log.Printf("[CacheManager:%s] JSON cache miss for key '%s', fetching from source", cm.config.Name, key)
+	value, err := fetchFunc()
+	if err != nil {
+		return "", fmt.Errorf("fetch function failed: %w", err)
+	}
+
+	// Store in cache as JSON
+	if setErr := cm.SetJSON(ctx, key, value); setErr != nil {
+		log.Printf("[CacheManager:%s] Failed to cache JSON: %v", cm.config.Name, setErr)
+		// Don't fail the request
+	}
+
+	// Also populate the destination
+	jsonData, _ := json.Marshal(value)
+	json.Unmarshal(jsonData, dest)
+
+	return "database", nil
 }
 
 // HealthCheck verifies cache system health

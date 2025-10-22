@@ -50,3 +50,36 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		"user":    user,
 	})
 }
+
+func (h *UserHandler) GetUser(c *gin.Context) {
+	id := c.Param("id")
+	var user models.User
+
+	// Try to get from cache using GetOrSetJSON
+	source, err := h.service.CacheManager.GetOrSetJSON(
+		c.Request.Context(),
+		"user:"+id,
+		&user,
+		func() (interface{}, error) {
+			// This function is only called on cache miss
+			return h.service.Repo.GetUserByID(id)
+		},
+	)
+
+	if err != nil {
+		h.service.Logger.Error("Failed to get user",
+			zap.String("id", id),
+			zap.Error(err))
+		c.JSON(404, gin.H{"error": "User not found"})
+		return
+	}
+
+	h.service.Logger.Info("User retrieved successfully",
+		zap.String("id", id),
+		zap.String("source", source))
+
+	c.JSON(200, gin.H{
+		"user":   user,
+		"source": source,
+	})
+}
