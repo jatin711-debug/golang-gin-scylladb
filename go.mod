@@ -5,8 +5,10 @@ go 1.24.1
 replace github.com/gocql/gocql => github.com/scylladb/gocql v1.15.3
 
 require (
+	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/gocql/gocql v1.15.3
+	github.com/redis/go-redis/v9 v9.14.1
 	github.com/scylladb/gocqlx/v3 v3.0.4
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.76.0
@@ -16,7 +18,9 @@ require (
 require (
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
