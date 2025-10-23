@@ -121,17 +121,32 @@ func (cm *CacheManager) Get(ctx context.Context, key string) (string, string, er
 func (cm *CacheManager) Set(ctx context.Context, key string, value any) error {
 	var localErr, redisErr error
 
-	// Write to local cache
+	// Marshal to JSON once (consistent serialization)
+	var jsonString string
+	switch v := value.(type) {
+	case string:
+		// Already a string, use as-is
+		jsonString = v
+	default:
+		// Marshal to JSON
+		jsonData, err := json.Marshal(value)
+		if err != nil {
+			return fmt.Errorf("failed to marshal value to JSON: %w", err)
+		}
+		jsonString = string(jsonData)
+	}
+
+	// Write to local cache (as string to avoid double serialization)
 	if cm.config.EnableLocalCache && cm.local != nil {
-		localErr = cm.local.SetJSON(key, value)
+		localErr = cm.local.SetString(key, jsonString)
 		if localErr != nil {
 			log.Printf("[CacheManager:%s] Failed to set in local cache: %v", cm.config.Name, localErr)
 		}
 	}
 
-	// Write to Redis cache
+	// Write to Redis cache (as string to avoid double serialization)
 	if cm.config.EnableRedisCache && cm.redis != nil {
-		redisErr = cm.redis.Set(ctx, key, value, cm.config.RedisTTL)
+		redisErr = cm.redis.Set(ctx, key, jsonString, cm.config.RedisTTL)
 		if redisErr != nil {
 			log.Printf("[CacheManager:%s] Failed to set in Redis: %v", cm.config.Name, redisErr)
 
@@ -162,7 +177,7 @@ func (cm *CacheManager) SetWithTTL(ctx context.Context, key string, value string
 		}
 	}
 
-	// Write to Redis with custom TTL
+	// Write to Redis with custom TTL (value should already be a string/JSON)
 	if cm.config.EnableRedisCache && cm.redis != nil {
 		redisErr = cm.redis.Set(ctx, key, value, redisTTL)
 		if redisErr != nil {
@@ -301,14 +316,8 @@ func (cm *CacheManager) GetMetrics() map[string]interface{} {
 
 // SetJSON stores any object as JSON in cache
 func (cm *CacheManager) SetJSON(ctx context.Context, key string, value interface{}) error {
-	// Marshal to JSON
-	jsonData, err := json.Marshal(value)
-	if err != nil {
-		return fmt.Errorf("failed to marshal to JSON: %w", err)
-	}
-
-	// Store as string
-	return cm.Set(ctx, key, string(jsonData))
+	// Just delegate to Set, which handles JSON marshaling
+	return cm.Set(ctx, key, value)
 }
 
 // GetJSON retrieves and unmarshals a JSON object from cache
