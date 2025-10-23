@@ -102,8 +102,8 @@ func startHTTPServer(port string, router *gin.Engine, logger *zap.Logger) {
 	httpServer = &http.Server{
 		Addr:         ":" + port,
 		Handler:      router,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
 	}
 	if err := httpServer.ListenAndServe(); err != nil {
 		logger.Fatal("Failed to serve HTTP server: " + err.Error())

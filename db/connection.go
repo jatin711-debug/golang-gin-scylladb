@@ -37,7 +37,7 @@ func DefaultConfig() *Config {
 		ConnectTimeout:     10 * time.Second,
 		MaxRetries:         3,
 		RetryDelay:         2 * time.Second,
-		NumConnections:     2,
+		NumConnections:     50,
 		MaxWaitTime:        30 * time.Second,
 		ReconnectInterval:  60 * time.Second,
 		IgnorePeerAddr:     true,
