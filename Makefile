@@ -22,7 +22,7 @@ create_keyspace:
 	docker exec -it scylla-node1 cqlsh -e "CREATE KEYSPACE IF NOT EXISTS acid_data WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 3};"
 
 drop_keyspace:
-	docker exec -it scylla-node1 cqlsh -e "DROP KEYSPACE IF EXISTS prod_data;"
+	docker exec -it scylla-node1 cqlsh -e "DROP KEYSPACE IF EXISTS acid_data;"
 
 # Run the main server (HTTP + gRPC)
 run:
